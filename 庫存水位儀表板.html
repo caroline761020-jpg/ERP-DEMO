@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>唯光動物醫院 ｜ 庫存水位儀表板</title>
+<style>
+  :root{
+    --navy:#3a4a63; --navy-deep:#2c3a50; --navy-card:#33425a;
+    --tan:#d6b896; --tan-soft:#e4cdb0; --ink:#eef1f6; --muted:#9fb0c8;
+    --line:#46587a; --ok:#5fb98a; --warn:#e0b15a; --danger:#e08585;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",sans-serif;
+    background:var(--navy);color:var(--ink);line-height:1.5;padding:28px 22px 60px}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);
+    padding-bottom:20px;margin-bottom:26px}
+  .logo{width:54px;height:54px;flex:none;border:2px solid var(--tan);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:var(--tan);
+    font-weight:700;font-size:20px;letter-spacing:1px}
+  .title h1{font-size:22px;font-weight:600;letter-spacing:1px;color:var(--tan-soft)}
+  .title .en{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
+  .title .sub{font-size:13px;color:var(--muted);margin-top:3px}
+  .meta{margin-left:auto;text-align:right;font-size:12px;color:var(--muted)}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+  .kpi{background:var(--navy-card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .kpi .n{font-size:30px;font-weight:700;color:var(--tan-soft)}
+  .kpi .l{font-size:13px;color:var(--muted);margin-top:4px}
+  .kpi.danger .n{color:var(--danger)} .kpi.warn .n{color:var(--warn)} .kpi.ok .n{color:var(--ok)}
+
+  .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar input,.toolbar select{background:var(--navy-deep);border:1px solid var(--line);
+    color:var(--ink);padding:8px 12px;border-radius:8px;font-size:13px}
+  .toolbar input{min-width:240px}
+  .toolbar .spacer{flex:1}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+  .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.danger{background:var(--danger)}
+
+  .section-title{font-size:15px;color:var(--tan-soft);margin:30px 0 12px;font-weight:600;
+    display:flex;align-items:center;gap:8px}
+  .section-title .tag{font-size:11px;color:var(--muted);font-weight:400;
+    border:1px solid var(--line);padding:2px 8px;border-radius:20px}
+
+  table{width:100%;border-collapse:collapse;background:var(--navy-card);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px}
+  thead th{background:var(--navy-deep);color:var(--tan-soft);text-align:right;
+    padding:11px 12px;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none}
+  thead th.l{text-align:left}
+  tbody td{padding:10px 12px;text-align:right;border-top:1px solid var(--line);
+    font-variant-numeric:tabular-nums}
+  tbody td.l{text-align:left;font-family:"Consolas",monospace;color:var(--tan-soft)}
+  tbody tr:hover{background:rgba(214,184,150,.06)}
+  .neg{color:var(--danger)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+  .pill.ok{background:rgba(95,185,138,.16);color:var(--ok)}
+  .pill.warn{background:rgba(224,177,90,.16);color:var(--warn)}
+  .pill.danger{background:rgba(224,133,133,.16);color:var(--danger)}
+  .bar{height:6px;border-radius:4px;background:var(--line);position:relative;min-width:60px;margin-top:5px}
+  .bar>i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+  footer{margin-top:40px;font-size:11px;color:var(--muted);text-align:center;
+    border-top:1px solid var(--line);padding-top:18px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">W<span style="font-size:13px">/</span>M</div>
+    <div class="title">
+      <div class="en">Wei Guang Animal Hospital</div>
+      <h1>唯光動物醫院 ｜ 庫存水位儀表板</h1>
+      <div class="sub">資料來源：ERP DEMO ／ 製造模組 MRP（NTPTA 生產計劃、NTPTC 採購計劃）</div>
+    </div>
+    <div class="meta">
+      匯出日期 2026-06-17<br>產生時間 <span id="now"></span>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n" id="k-total">–</div><div class="l">總品項數（資料列）</div></div>
+    <div class="kpi ok"><div class="n" id="k-ok">–</div><div class="l">庫存正常</div></div>
+    <div class="kpi warn"><div class="n" id="k-warn">–</div><div class="l">需補貨（淨可用 ≤ 0）</div></div>
+    <div class="kpi danger"><div class="n" id="k-danger">–</div><div class="l">缺料／超領（庫存 &lt; 0）</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input id="q" type="text" placeholder="🔍 搜尋品號 / 廠商代號…">
+    <select id="filter">
+      <option value="all">全部狀態</option>
+      <option value="danger">缺料／超領</option>
+      <option value="warn">需補貨</option>
+      <option value="ok">庫存正常</option>
+    </select>
+    <div class="spacer"></div>
+    <div class="legend">
+      <span><i class="dot ok"></i>正常</span>
+      <span><i class="dot warn"></i>需補貨</span>
+      <span><i class="dot danger"></i>缺料／超領</span>
+    </div>
+  </div>
+
+  <div class="section-title">生產計劃庫存水位 <span class="tag" id="tag-a">NTPTA</span></div>
+  <table id="tbl-a">
+    <thead><tr>
+      <th class="l" data-k="item">生產品號</th>
+      <th data-k="date">完工日</th>
+      <th data-k="demand">毛需求量</th>
+      <th data-k="onhand">庫存量</th>
+      <th data-k="in">預計進貨+生產</th>
+      <th data-k="out">預計銷售+領用</th>
+      <th data-k="net">淨可用量</th>
+      <th data-k="issued">已發放量</th>
+      <th data-k="status">狀態</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="section-title">採購計劃庫存水位 <span class="tag" id="tag-c">NTPTC</span></div>
+  <table id="tbl-c">
+    <thead><tr>
+      <th class="l" data-k="item">品號</th>
+      <th data-k="date">交貨日</th>
+      <th class="l" data-k="vendor">廠商</th>
+      <th data-k="demand">毛需求量</th>
+      <th data-k="onhand">庫存量</th>
+      <th data-k="po">採購數量</th>
+      <th data-k="in">預計進貨+生產</th>
+      <th data-k="net">淨可用量</th>
+      <th data-k="status">狀態</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <footer>
+    本頁為本地靜態網頁，資料已內嵌，無需網路或伺服器，直接以瀏覽器開啟即可。<br>
+    淨可用量 = 庫存量 + 預計進貨 + 預計生產 − 預計銷售 − 預計領用 − 毛需求量。<br>
+    © 唯光動物醫院 WEI GUANG Animal Hospital ｜ 資料僅供內部庫存管理參考。
+  </footer>
+</div>
+
+<script>
+// ===== 內嵌資料：來自 05_製造 Excel 的 NTPTA / NTPTC =====
+const RAW = {
+ "NTPTA":[
+  {"TA002":"1-7-7811NS509BD000R","TA003":"20250225","TA006":1000,"TA011":1000,"TA012":0,"TA013":0,"TA014":1000,"TA015":1000,"TA016":0,"TA017":0,"TA021":1000},
+  {"TA002":"2-7-B7871-04RGA08","TA003":"20250225","TA006":1000,"TA011":1000,"TA012":0,"TA013":0,"TA014":1000,"TA015":0,"TA016":1000,"TA017":0,"TA021":1000},
+  {"TA002":"2-7-BD78-063-001RGA","TA003":"20250225","TA006":1000,"TA011":1000,"TA012":0,"TA013":0,"TA014":1000,"TA015":0,"TA016":1000,"TA017":0,"TA021":1000},
+  {"TA002":"2-7-C01-342RGE01","TA003":"20250225","TA006":1000,"TA011":1000,"TA012":0,"TA013":0,"TA014":1000,"TA015":0,"TA016":1000,"TA017":0,"TA021":1000},
+  {"TA002":"2-7-C06-079GA01","TA003":"20250225","TA006":1000,"TA011":1000,"TA012":0,"TA013":0,"TA014":1000,"TA015":0,"TA016":1000,"TA017":0,"TA021":1000},
+  {"TA002":"1-7-7811NS509BD000R","TA003":"20250223","TA006":500,"TA011":500,"TA012":1000,"TA013":0,"TA014":0,"TA015":1800,"TA016":0,"TA017":0,"TA021":0},
+  {"TA002":"2-7-B7871-04RGA08","TA003":"20250223","TA006":500,"TA011":500,"TA012":-1000,"TA013":0,"TA014":0,"TA015":0,"TA016":0,"TA017":0,"TA021":0},
+  {"TA002":"2-7-BD78-063-001RGA","TA003":"20250223","TA006":500,"TA011":500,"TA012":-1000,"TA013":0,"TA014":0,"TA015":0,"TA016":0,"TA017":0,"TA021":0},
+  {"TA002":"2-7-C01-342RGE01","TA003":"20250223","TA006":500,"TA011":500,"TA012":-1000,"TA013":0,"TA014":0,"TA015":0,"TA016":0,"TA017":0,"TA021":0},
+  {"TA002":"2-7-C06-079GA01","TA003":"20250223","TA006":500,"TA011":500,"TA012":-1000,"TA013":0,"TA014":0,"TA015":0,"TA016":0,"TA017":0,"TA021":0}
+ ],
+ "NTPTC":[
+  {"TC002":"3-7-C02-086","TC003":"20250223","TC004":"110","TC006":500,"TC012":500,"TC013":0,"TC014":0,"TC015":0,"TC016":0,"TC017":0},
+  {"TC002":"3-7-C03-042X04","TC003":"20250223","TC004":"107","TC006":500,"TC012":500,"TC013":0,"TC014":0,"TC015":0,"TC016":0,"TC017":0},
+  {"TC002":"3-7-C04-233","TC003":"20250223","TC004":"107","TC006":500,"TC012":500,"TC013":0,"TC014":0,"TC015":0,"TC016":0,"TC017":0},
+  {"TC002":"3-7-B7871-04RGA08","TC003":"20250223","TC004":"203","TC006":500,"TC012":500,"TC013":0,"TC014":0,"TC015":0,"TC016":0,"TC017":0},
+  {"TC002":"3-7-C01-342RGE01","TC003":"20250223","TC004":"104","TC006":500,"TC012":500,"TC013":-1000,"TC014":0,"TC015":0,"TC016":0,"TC017":0},
+  {"TC002":"3-7-R11-00802","TC003":"20250222","TC004":"111","TC006":3.65,"TC012":3.65,"TC013":0,"TC014":0,"TC015":0,"TC016":0,"TC017":0}
+ ]
+};
+
+const fmtDate = d => d && d.length===8 ? d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6,8) : (d||"—");
+const fmtNum  = n => (n===0?0:(n||0)).toLocaleString("en-US",{maximumFractionDigits:2});
+function statusOf(onhand, net){
+  if(onhand < 0) return "danger";        // 庫存為負 = 超領/缺料
+  if(net <= 0)   return "warn";          // 淨可用不足 = 需補貨
+  return "ok";
+}
+const STATUS_TXT = {ok:"庫存正常", warn:"需補貨", danger:"缺料／超領"};
+
+// 正規化兩張表
+const rowsA = RAW.NTPTA.map(r=>{
+  const onhand=r.TA012, inc=r.TA013+r.TA014, out=r.TA015+r.TA016;
+  const net = onhand + inc - out - r.TA011;
+  return {item:r.TA002,date:r.TA003,demand:r.TA011,onhand,in:inc,out,net,issued:r.TA021,
+          status:statusOf(onhand,net)};
+});
+const rowsC = RAW.NTPTC.map(r=>{
+  const onhand=r.TC013, inc=r.TC014+r.TC015, out=r.TC016+r.TC017;
+  const net = onhand + inc - out - r.TC012;
+  return {item:r.TC002,date:r.TC003,vendor:r.TC004,demand:r.TC012,onhand,po:r.TC006,
+          in:inc,net,status:statusOf(onhand,net)};
+});
+const ALL = [...rowsA, ...rowsC];
+
+// KPI
+document.getElementById("k-total").textContent  = ALL.length;
+document.getElementById("k-ok").textContent     = ALL.filter(r=>r.status==="ok").length;
+document.getElementById("k-warn").textContent   = ALL.filter(r=>r.status==="warn").length;
+document.getElementById("k-danger").textContent = ALL.filter(r=>r.status==="danger").length;
+document.getElementById("tag-a").textContent = "NTPTA ・ "+rowsA.length+" 筆";
+document.getElementById("tag-c").textContent = "NTPTC ・ "+rowsC.length+" 筆";
+document.getElementById("now").textContent = new Date().toLocaleString("zh-TW");
+
+const numCell = v => `<td class="${v<0?'neg':''}">${fmtNum(v)}</td>`;
+const pill = s => `<span class="pill ${s}">${STATUS_TXT[s]}</span>`;
+
+function renderA(rows){
+  document.querySelector("#tbl-a tbody").innerHTML = rows.map(r=>`
+    <tr><td class="l">${r.item}</td><td>${fmtDate(r.date)}</td>
+    ${numCell(r.demand)}${numCell(r.onhand)}${numCell(r.in)}${numCell(r.out)}${numCell(r.net)}${numCell(r.issued)}
+    <td>${pill(r.status)}</td></tr>`).join("") || emptyRow(9);
+}
+function renderC(rows){
+  document.querySelector("#tbl-c tbody").innerHTML = rows.map(r=>`
+    <tr><td class="l">${r.item}</td><td>${fmtDate(r.date)}</td><td class="l">${r.vendor}</td>
+    ${numCell(r.demand)}${numCell(r.onhand)}${numCell(r.po)}${numCell(r.in)}${numCell(r.net)}
+    <td>${pill(r.status)}</td></tr>`).join("") || emptyRow(9);
+}
+const emptyRow = c => `<tr><td colspan="${c}" style="text-align:center;color:var(--muted);padding:24px">查無符合資料</td></tr>`;
+
+function apply(){
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const f = document.getElementById("filter").value;
+  const match = r => (f==="all"||r.status===f) &&
+    (q===""|| r.item.toLowerCase().includes(q) || (r.vendor&&r.vendor.toLowerCase().includes(q)));
+  renderA(rowsA.filter(match));
+  renderC(rowsC.filter(match));
+}
+document.getElementById("q").addEventListener("input", apply);
+document.getElementById("filter").addEventListener("change", apply);
+
+// 排序
+function makeSortable(tblId, rowsRef, renderFn){
+  document.querySelectorAll("#"+tblId+" thead th").forEach(th=>{
+    let asc=true;
+    th.addEventListener("click",()=>{
+      const k=th.dataset.k;
+      rowsRef.sort((a,b)=>{
+        const x=a[k],y=b[k];
+        const r = (typeof x==="number"&&typeof y==="number") ? x-y : String(x).localeCompare(String(y));
+        return asc?r:-r;
+      });
+      asc=!asc; apply();
+    });
+  });
+}
+makeSortable("tbl-a", rowsA, renderA);
+makeSortable("tbl-c", rowsC, renderC);
+
+apply();
+</script>
+</body>
+</html>
