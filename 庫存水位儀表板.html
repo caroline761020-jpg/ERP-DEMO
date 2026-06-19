@@ -25,7 +25,8 @@
   .meta{margin-left:auto;text-align:right;font-size:12px;color:var(--muted)}
 
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
-  .kpi{background:var(--navy-card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .kpi{background:var(--navy-card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    display:flex;flex-direction:column}
   .kpi .n{font-size:30px;font-weight:700;color:var(--tan-soft)}
   .kpi .l{font-size:13px;color:var(--muted);margin-top:4px}
   .kpi.danger .n{color:var(--danger)} .kpi.warn .n{color:var(--warn)} .kpi.ok .n{color:var(--ok)}
@@ -60,6 +61,38 @@
   .pill.danger{background:rgba(224,133,133,.16);color:var(--danger)}
   .bar{height:6px;border-radius:4px;background:var(--line);position:relative;min-width:60px;margin-top:5px}
   .bar>i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+  .ai-btn{margin-top:12px;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;
+    background:transparent;border:1px solid var(--tan);color:var(--tan-soft);font-size:12px;
+    padding:6px 13px;border-radius:20px;cursor:pointer;transition:.15s;font-family:inherit}
+  .ai-btn:hover{background:var(--tan);color:var(--navy-deep);box-shadow:0 4px 14px rgba(214,184,150,.25)}
+
+  .overlay{position:fixed;inset:0;background:rgba(18,26,40,.74);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay.show{display:flex;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--navy-card);border:1px solid var(--tan);border-radius:16px;
+    max-width:680px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+  .modal-head{display:flex;align-items:flex-start;gap:13px;padding:22px 24px 16px;
+    border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--navy-card);z-index:1}
+  .modal-head .ico{font-size:24px;line-height:1}
+  .modal-head h2{font-size:18px;color:var(--tan-soft);font-weight:600}
+  .modal-head .kn{font-size:12px;color:var(--muted);margin-top:3px}
+  .modal-head .x{margin-left:auto;cursor:pointer;color:var(--muted);font-size:24px;line-height:1;
+    border:none;background:none;padding:0 4px}
+  .modal-head .x:hover{color:var(--tan-soft)}
+  .modal-body{padding:6px 24px 24px}
+  .insight{margin-top:20px}
+  .insight h3{font-size:14px;color:var(--tan-soft);display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .insight h3 .b{width:4px;height:15px;background:var(--tan);border-radius:2px;display:inline-block}
+  .insight p{font-size:13.5px;color:var(--ink);line-height:1.75}
+  .insight ul{margin:8px 0 0;list-style:none;padding:0}
+  .insight li{font-size:13.5px;color:var(--ink);line-height:1.7;padding-left:18px;position:relative;margin-bottom:7px}
+  .insight li:before{content:"▸";position:absolute;left:0;color:var(--tan)}
+  .insight .hl{color:var(--tan-soft);font-weight:600}
+  .insight .codes{font-family:"Consolas",monospace;font-size:12px;color:var(--muted);
+    background:var(--navy-deep);border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-top:8px;word-break:break-all}
+  .disclaimer{margin-top:22px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:13px;line-height:1.7}
+
   footer{margin-top:40px;font-size:11px;color:var(--muted);text-align:center;
     border-top:1px solid var(--line);padding-top:18px;line-height:1.8}
 </style>
@@ -79,10 +112,14 @@
   </header>
 
   <div class="kpis">
-    <div class="kpi"><div class="n" id="k-total">–</div><div class="l">總品項數（資料列）</div></div>
-    <div class="kpi ok"><div class="n" id="k-ok">–</div><div class="l">庫存正常</div></div>
-    <div class="kpi warn"><div class="n" id="k-warn">–</div><div class="l">需補貨（淨可用 ≤ 0）</div></div>
-    <div class="kpi danger"><div class="n" id="k-danger">–</div><div class="l">缺料／超領（庫存 &lt; 0）</div></div>
+    <div class="kpi"><div class="n" id="k-total">–</div><div class="l">總品項數（資料列）</div>
+      <button class="ai-btn" data-kpi="total">💡 AI 洞見</button></div>
+    <div class="kpi ok"><div class="n" id="k-ok">–</div><div class="l">庫存正常</div>
+      <button class="ai-btn" data-kpi="ok">💡 AI 洞見</button></div>
+    <div class="kpi warn"><div class="n" id="k-warn">–</div><div class="l">需補貨（淨可用 ≤ 0）</div>
+      <button class="ai-btn" data-kpi="warn">💡 AI 洞見</button></div>
+    <div class="kpi danger"><div class="n" id="k-danger">–</div><div class="l">缺料／超領（庫存 &lt; 0）</div>
+      <button class="ai-btn" data-kpi="danger">💡 AI 洞見</button></div>
   </div>
 
   <div class="toolbar">
@@ -138,6 +175,20 @@
     淨可用量 = 庫存量 + 預計進貨 + 預計生產 − 預計銷售 − 預計領用 − 毛需求量。<br>
     © 唯光動物醫院 WEI GUANG Animal Hospital ｜ 資料僅供內部庫存管理參考。
   </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <span class="ico" id="m-ico">💡</span>
+      <div>
+        <h2 id="m-title">AI 洞見</h2>
+        <div class="kn" id="m-kn"></div>
+      </div>
+      <button class="x" id="m-close" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
 </div>
 
 <script>
@@ -243,6 +294,100 @@ function makeSortable(tblId, rowsRef, renderFn){
 }
 makeSortable("tbl-a", rowsA, renderA);
 makeSortable("tbl-c", rowsC, renderC);
+
+// ===== AI 洞見（企業主視角，依當下數據動態生成）=====
+function buildStats(){
+  const total = ALL.length;
+  const okN = ALL.filter(r=>r.status==="ok").length;
+  const warnN = ALL.filter(r=>r.status==="warn").length;
+  const dangerN = ALL.filter(r=>r.status==="danger").length;
+  const pct = n => total? Math.round(n/total*100):0;
+  const distinct = new Set(ALL.map(r=>r.item)).size;
+  const warnItems = ALL.filter(r=>r.status==="warn");
+  const dangerItems = ALL.filter(r=>r.status==="danger");
+  const deficit = warnItems.reduce((s,r)=>s+Math.min(0,r.net),0); // 負值=總缺口
+  const minOnhand = dangerItems.length? Math.min(...dangerItems.map(r=>r.onhand)):0;
+  // 最新資料日期 → 時效
+  const dates = ALL.map(r=>r.date).filter(Boolean).sort();
+  const maxDate = dates.length? dates[dates.length-1]:null;
+  let monthsOld = null;
+  if(maxDate){
+    const d=new Date(maxDate.slice(0,4),+maxDate.slice(4,6)-1,maxDate.slice(6,8));
+    monthsOld = Math.round((Date.now()-d.getTime())/(1000*60*60*24*30.4));
+  }
+  return {total,okN,warnN,dangerN,pct,distinct,warnItems,dangerItems,deficit,minOnhand,maxDate,monthsOld};
+}
+function codeList(items, n=6){
+  const codes=[...new Set(items.map(r=>r.item))];
+  const shown=codes.slice(0,n).join("　");
+  return `<div class="codes">受影響品號：${shown}${codes.length>n?`　…等 ${codes.length} 項`:""}</div>`;
+}
+const num = n => Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:2});
+
+function insightFor(kpi){
+  const s = buildStats();
+  const I = {
+    total:{ico:"📊",title:"監控涵蓋範圍與資料可信度",
+      analysis:`本看板涵蓋 <span class="hl">${s.total} 筆</span>計劃資料、共 <span class="hl">${s.distinct} 個品號</span>。但資料最新日期為 <span class="hl">${fmtDate(s.maxDate)}</span>，距今約 <span class="hl">${s.monthsOld} 個月</span>。身為企業主，最大的風險不是數字本身，而是你正用「過期快照」在做今天的庫存與採購決策——帳面與現場可能早已脫節。`,
+      source:["資料為 ERP 單次匯出，非即時連動，會隨時間失真。",
+        "同一品號同時出現在生產與採購計劃，易被重複計算、放大需求。",
+        "目前未匯入真實「現有庫存」主檔（04 庫存檔），在庫量可能被低估。"],
+      actions:["建立每日/每週自動匯出或 API 同步，讓看板反映即時狀態。",
+        "以「品號」彙總去重，避免重複下單造成現金浪費。",
+        "補齊 04 庫存主檔，讓水位判斷貼近真實在庫。",
+        "在看板加上「資料時效」警示，超過天數自動提醒。"]},
+    ok:{ico:"✅",title:"健康庫存佔比 — 庫存政策的體檢分數",
+      analysis:`目前僅 <span class="hl">${s.okN} 項（${s.pct(s.okN)}%）</span>處於正常水位。${s.okN===0?"等於 <span class=\"hl\">100% 的品項都落在異常區</span>——這不是個別缺料，而是整體庫存政策失靈的警訊。":"比例偏低，代表多數品項不是太多就是太少，資金與服務都承壓。"}對企業主而言，正常品項佔比就是庫存管理的「體檢分數」。`,
+      source:["系統未設定安全庫存／再訂購點，水位永遠在「過多或不足」之間擺盪。",
+        "需求預估與到料時間錯配，補貨總是慢半拍或過頭。",
+        "現有庫存資料缺漏，部分品項被誤判為 0，形成「假性缺料」。"],
+      actions:["導入安全庫存（Safety Stock）與再訂購點（ROP）作為基本防線。",
+        "先補齊真實在庫資料，排除假性缺料再做判斷。",
+        "用 ABC 分級，把管理力氣集中在高金額、高週轉品。",
+        "設定每月目標（如正常品項 ≥ 80%）並追蹤趨勢。"]},
+    warn:{ico:"⚠️",title:"短缺預警 — 現金與交付的雙重壓力",
+      analysis:`有 <span class="hl">${s.warnN} 項（${s.pct(s.warnN)}%）</span>淨可用量 ≤ 0，合計缺口約 <span class="hl">${num(s.deficit)} 單位</span>。意思是若不補貨，這些品項短期內將「歸零」，直接衝擊作業排程與對客戶／病患的服務交付。缺貨的代價往往不是料錢，而是流失的營收與信任。`,
+      source:["預計進貨／生產量不足以覆蓋毛需求。",
+        "採購前置期（Lead Time）過長，補貨追不上消耗速度。",
+        "需求預測偏低，或臨時需求突增未被反映。"],
+      actions:[`立即對這 <span class="hl">${s.warnN} 項</span>排定採購單／製令。`,
+        "依「金額 × 缺口」排序，先救高價值品，守住現金效率。",
+        "與關鍵供應商談安全交期或 VMI（供應商管理庫存）。",
+        "設定自動補貨觸發點，減少人工漏單。"],
+      codes:s.warnItems},
+    danger:{ico:"🔴",title:"庫存透支 — 最高風險，需立即處理",
+      analysis:`有 <span class="hl">${s.dangerN} 項</span>庫存已為負數（最嚴重達 <span class="hl">−${num(s.minOnhand)} 單位</span>），代表系統已允許「超領／透支」出庫。這不只是缺料，更意味<span class="hl">帳料不符</span>——你看到的數字已不可信，現場恐已停工或服務中斷。這是企業主應最優先處理的紅燈。`,
+      source:["ERP 開啟「庫存不足照領」，允許負庫存出庫。",
+        "領用／出庫未即時入帳，帳面落後現場。",
+        "BOM 或計劃重複發放，造成重複扣帳。"],
+      actions:[`立即實地盤點這 <span class="hl">${s.dangerN} 項</span>，校正帳面。`,
+        "關閉或加上審核機制於「庫存不足照領」設定。",
+        "追查負庫存交易來源（誰、何時、哪張單）。",
+        "對影響營運的品項啟動緊急採購。"],
+      codes:s.dangerItems}
+  };
+  return I[kpi];
+}
+
+function openInsight(kpi){
+  const d = insightFor(kpi);
+  document.getElementById("m-ico").textContent = d.ico;
+  document.getElementById("m-title").textContent = d.title;
+  document.getElementById("m-kn").textContent = "AI 洞見 ｜ 企業主視角";
+  const sec = (t,inner)=>`<div class="insight"><h3><span class="b"></span>${t}</h3>${inner}</div>`;
+  const ul = arr=>`<ul>${arr.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  document.getElementById("m-body").innerHTML =
+    sec("問題分析", `<p>${d.analysis}</p>` + (d.codes?codeList(d.codes):"")) +
+    sec("問題來源", ul(d.source)) +
+    sec("建議對策", ul(d.actions)) +
+    `<div class="disclaimer">本洞見由系統依目前看板數據自動生成，僅供管理參考；實際決策請結合現場盤點與完整 ERP 資料。</div>`;
+  document.getElementById("overlay").classList.add("show");
+}
+function closeInsight(){ document.getElementById("overlay").classList.remove("show"); }
+document.querySelectorAll(".ai-btn").forEach(b=>b.addEventListener("click",()=>openInsight(b.dataset.kpi)));
+document.getElementById("m-close").addEventListener("click", closeInsight);
+document.getElementById("overlay").addEventListener("click", e=>{ if(e.target.id==="overlay") closeInsight(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeInsight(); });
 
 apply();
 </script>
